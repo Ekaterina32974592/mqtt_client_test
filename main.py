@@ -8,10 +8,11 @@ def on_connect(client, userdata, flags, rc):
 
 def on_message(client, userdata, msg):
     userdata["counter"] = int(msg.payload)
+    userdata["time_passed"] = 0
     userdata["last_time"] = datetime.datetime.now()
 
 
-time_arg_d = {"counter": 0, "last_time": 0}
+time_arg_d = {"counter": 0, "time_passed": 0, "last_time": 0}
 client = mqtt.Client(userdata=time_arg_d)
 client.on_connect = on_connect
 client.message_callback_add("/counter/in", on_message)
@@ -25,6 +26,10 @@ while run:
         current_time = datetime.datetime.now()
         delta = current_time - time_arg_d["last_time"]
         ms = delta.total_seconds()
+        if ms >= time_arg_d["time_passed"]:
+            client.publish("/counter/countdown", str(time_arg_d["counter"] - time_arg_d["time_passed"]))
+            time_arg_d["time_passed"] += 1
         if ms >= time_arg_d["counter"]:
             client.publish("/counter/out", "Alarm!")
             time_arg_d["counter"] = 0
+
